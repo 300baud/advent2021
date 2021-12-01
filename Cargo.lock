@@ -6,7 +6,6 @@ version = 3
 name = "advent2021"
 version = "0.1.0"
 dependencies = [
- "file",
  "itertools",
 ]
 
@@ -15,12 +14,6 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
-
-[[package]]
-name = "file"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "072420e920a41e95a021116fb47c331d1199aab0f12ca1f77903d5c0ec65c37a"
 
 [[package]]
 name = "itertools"

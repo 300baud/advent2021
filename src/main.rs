@@ -1,6 +1,6 @@
-use itertools::Itertools;
-use file::*;
+use advent2021::*;
 
 fn main() {
-    println!("Hello, world!");
+    day01_a();
+    day01_b();
 }
