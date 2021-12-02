@@ -10,24 +10,44 @@ pub fn day01_a() {
         .filter(|r| r[1] > r[0])
         .count();
 
-    println!("Part 01a saw {} measurements that were deeper", count);
+    println!("Problem 01a saw {} measurements that were deeper", count);
 }
 
 pub fn day01_b() {
     let count = include_str!("input/day01")
         .lines()
-        .map(|line| line.parse::<u32>().unwrap())
+        .map(|line| line.parse().unwrap())
         .collect::<Vec<u32>>()
         .as_slice()
         .windows(4)
         .filter(|r| r[1..=3].iter().sum::<u32>() > r[0..=2].iter().sum::<u32>())
         .count();
 
-    println!("Part 01b saw {} measurements that were deeper", count);
+    println!("Problem 01b saw {} measurements that were deeper", count);
 }
 
 pub fn day02_a() {
-    println!("day02_a not solved yet!");
+    let lines = include_str!("input/day02").lines();
+    let mut horizontal = 0i32;
+    let mut depth = 0i32;
+
+    for line in lines {
+        let tokens = line.split_ascii_whitespace().collect::<Vec<&str>>();
+        let direction = tokens[0];
+        let amount: i32 = tokens[1].parse().unwrap();
+
+        match direction {
+            "forward" => horizontal += amount,
+            "down" => depth += amount,
+            "up" => depth -= amount,
+            _ => {}
+        }
+    }
+
+    println!(
+        "Problem 02a saw a total forward x depth product of {}",
+        horizontal * depth
+    );
 }
 
 pub fn day02_b() {
