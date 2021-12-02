@@ -51,7 +51,31 @@ pub fn day02_a() {
 }
 
 pub fn day02_b() {
-    println!("day02_b not solved yet!");
+    let lines = include_str!("input/day02").lines();
+    let mut horizontal = 0i32;
+    let mut depth = 0i32;
+    let mut aim = 0i32;
+
+    for line in lines {
+        let tokens = line.split_ascii_whitespace().collect::<Vec<&str>>();
+        let direction = tokens[0];
+        let amount: i32 = tokens[1].parse().unwrap();
+
+        match direction {
+            "forward" => {
+                horizontal += amount;
+                depth += amount * aim;
+            }
+            "down" => aim += amount,
+            "up" => aim -= amount,
+            _ => {}
+        }
+    }
+
+    println!(
+        "Problem 02b saw a total forward x depth product of {}",
+        horizontal * depth
+    );
 }
 
 pub fn day03_a() {
