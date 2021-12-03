@@ -79,7 +79,36 @@ pub fn day02_b() {
 }
 
 pub fn day03_a() {
-    println!("day03_a not solved yet!");
+    let lines = include_str!("input/day03").lines().collect::<Vec<&str>>();
+    let num_bits = lines[0].len();
+    let num_lines = lines.len();
+    let mut counts = vec![0u32; num_bits];
+
+    for line in lines {
+        let chars = line.chars();
+        for (i, c) in chars.enumerate() {
+            counts[i] += c.to_string().parse::<u32>().unwrap();
+        }
+    }
+
+    let mut gamma_bits: Vec<char> = vec![];
+    let mut epsilon_bits: Vec<char> = vec![];
+
+    for bit in counts.iter() {
+        if bit > &(num_lines as u32 / 2) {
+            gamma_bits.push('1');
+            epsilon_bits.push('0');
+        } else {
+            gamma_bits.push('0');
+            epsilon_bits.push('1');
+        }
+    }
+
+    let gamma_str = gamma_bits.iter().join("");
+    let epsilon_str = epsilon_bits.iter().join("");
+    let gamma = u32::from_str_radix(&gamma_str, 2).unwrap();
+    let epsilon = u32::from_str_radix(&epsilon_str, 2).unwrap();
+    println!("Problem 03a saw a computed number of {}", gamma * epsilon);
 }
 
 pub fn day03_b() {
