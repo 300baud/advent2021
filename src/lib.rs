@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use std::collections::HashSet;
 
 pub fn day01_a() {
     let count = include_str!("input/day01")
@@ -78,24 +79,39 @@ pub fn day02_b() {
     );
 }
 
-pub fn day03_a() {
+struct Day03 {
+    line_chars: Box<Vec<Vec<char>>>,
+    one_counts: Box<Vec<usize>>,
+}
+
+fn day03_helper() -> Box<Day03> {
     let lines = include_str!("input/day03").lines().collect::<Vec<&str>>();
     let num_bits = lines[0].len();
-    let num_lines = lines.len();
-    let mut counts = vec![0u32; num_bits];
 
-    for line in lines {
-        let chars = line.chars();
-        for (i, c) in chars.enumerate() {
-            counts[i] += c.to_string().parse::<u32>().unwrap();
-        }
-    }
+    let line_chars = lines
+        .iter()
+        .map(|l| l.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
 
+    let one_counts = (0..num_bits)
+        .map(|i| line_chars.iter().filter(|l| l[i] == '1').count())
+        .collect_vec();
+
+    Box::new(Day03 {
+        line_chars: Box::new(line_chars.clone()),
+        one_counts: Box::new(one_counts.clone()),
+    })
+}
+
+pub fn day03_a() {
+    let help = day03_helper();
+    let num_bits = help.line_chars.len();
+    let one_counts = help.one_counts;
     let mut gamma_bits: Vec<char> = vec![];
     let mut epsilon_bits: Vec<char> = vec![];
 
-    for bit in counts.iter() {
-        if bit > &(num_lines as u32 / 2) {
+    for one_count in one_counts.iter() {
+        if *one_count >= num_bits / 2 {
             gamma_bits.push('1');
             epsilon_bits.push('0');
         } else {
@@ -108,15 +124,214 @@ pub fn day03_a() {
     let epsilon_str = epsilon_bits.iter().join("");
     let gamma = u32::from_str_radix(&gamma_str, 2).unwrap();
     let epsilon = u32::from_str_radix(&epsilon_str, 2).unwrap();
+
     println!("Problem 03a saw a computed number of {}", gamma * epsilon);
 }
 
 pub fn day03_b() {
-    println!("day03_b not solved yet!");
+    let help = day03_helper();
+    let line_chars = help.line_chars;
+    let num_bits = line_chars[0].len();
+    let one_counts = help.one_counts;
+    let mut good_oxy: HashSet<String> = HashSet::new();
+    let mut good_co2: HashSet<String> = HashSet::new();
+
+    let mut gamma_bits: Vec<char> = vec![];
+
+    for one_count in one_counts.iter() {
+        if *one_count >= num_bits / 2 {
+            gamma_bits.push('1');
+        } else {
+            gamma_bits.push('0');
+        }
+    }
+
+    let sigs = line_chars
+        .iter()
+        .map(|line| line.iter().join(""))
+        .collect_vec();
+
+    for sig in sigs {
+        good_oxy.insert(sig.clone());
+        good_co2.insert(sig);
+    }
+
+    for line in line_chars.iter() {
+        for i in 0..num_bits {
+            if line[i] != gamma_bits[i] {
+                let sig = line.iter().join("");
+                good_oxy.remove(&sig);
+            }
+        }
+    }
+
+    for line in line_chars.iter() {
+        for i in 0..num_bits {
+            if line[i] == gamma_bits[i] {
+                let sig = line.iter().join("");
+                good_co2.remove(&sig);
+            }
+        }
+    }
+
+    // println!("{:?}", good_oxy);
+    // println!("{:?}", good_co2);
+
+    // let oxy_num = usize::from_str_radix(&oxy_readings[0].iter().join(""), 2).unwrap();
+    // let co2_num = usize::from_str_radix(&co2_readings[0].iter().join(""), 2).unwrap();
+
+    // println!("Problem 03b saw computed result of {}", oxy_num * co2_num);
+}
+
+#[derive(Debug)]
+struct Square {
+    num: usize,
+    checked: bool,
+}
+
+impl Square {
+    fn num(&self) -> usize {
+        self.num
+    }
+
+    fn check(&mut self) {
+        self.checked = true;
+    }
+
+    fn is_checked(&self) -> bool {
+        self.checked
+    }
+}
+#[derive(Debug)]
+struct Bingo {
+    squares: Vec<Vec<Square>>,
+}
+
+impl Bingo {
+    // Parse N rows of a bingo card, with each column separated by
+    // whitespace. Requires NxN grid.
+    fn from(bingo_string: String) -> Self {
+        let squares = bingo_string
+            .lines()
+            .map(|l| {
+                l.split_ascii_whitespace()
+                    .map(|v| Square {
+                        num: v.parse::<usize>().unwrap(),
+                        checked: false,
+                    })
+                    .collect_vec()
+            })
+            .collect_vec();
+
+        Bingo { squares: squares }
+    }
+
+    // Cross out the number if it exists. Return Some(num) if
+    // Bingo is reached. The number returned is the number you hit
+    // Bingo on.
+    fn cross_out(&mut self, num: usize) -> Option<usize> {
+        for row in &mut self.squares {
+            for mut square in row {
+                if square.num() == num {
+                    square.check();
+                }
+            }
+        }
+
+        if self.is_bingo() {
+            Some(num)
+        } else {
+            None
+        }
+    }
+
+    fn unseen_nums(&self) -> Vec<usize> {
+        let mut unseen: Vec<usize> = vec![];
+        for row in &self.squares {
+            for square in row {
+                if !square.is_checked() {
+                    unseen.push(square.num());
+                }
+            }
+        }
+        unseen
+    }
+
+    fn generate_wins(&self) -> Vec<Vec<(usize, usize)>> {
+        let mut wins = vec![];
+        for i in 0..self.squares.len() {
+            let mut row: Vec<(usize, usize)> = vec![];
+            for j in 0..self.squares.len() {
+                row.push((i, j))
+            }
+            wins.push(row);
+        }
+
+        for i in 0..self.squares.len() {
+            let mut col: Vec<(usize, usize)> = vec![];
+            for j in 0..self.squares.len() {
+                col.push((j, i))
+            }
+            wins.push(col);
+        }
+
+        wins
+    }
+
+    fn is_bingo(&self) -> bool {
+        for win in self.generate_wins() {
+            let hits = win
+                .iter()
+                .map(|&(x, y)| &self.squares[x][y])
+                .filter(|s| s.is_checked())
+                .count();
+
+            if hits == self.squares.len() {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 pub fn day04_a() {
-    println!("day04_a not solved yet!");
+    let mut lines = include_str!("input/day04")
+        .lines()
+        .map(|l| l.to_string())
+        .collect_vec();
+
+    let picks = lines.remove(0);
+    let picks = picks
+        .split(",")
+        .map(|v| v.parse::<usize>().unwrap())
+        .collect_vec();
+
+    lines.remove(0);
+
+    let mut cards: Vec<Bingo> = vec![];
+    let mut buf: Vec<String> = vec![];
+
+    for line in &lines {
+        if line == "" {
+            let card = Bingo::from(buf.join("\n"));
+            cards.push(card);
+            buf.clear();
+            continue;
+        }
+        buf.push(line.to_string());
+    }
+
+    for pick in picks {
+        for mut card in &mut cards {
+            if let Some(num) = card.cross_out(pick) {
+                println!(
+                    "Problem 04a bingo calc is {}",
+                    pick * card.unseen_nums().iter().sum::<usize>()
+                );
+                return;
+            }
+        }
+    }
 }
 
 pub fn day04_b() {
