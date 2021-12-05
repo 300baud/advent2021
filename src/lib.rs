@@ -205,6 +205,7 @@ impl Square {
 #[derive(Debug)]
 struct Bingo {
     squares: Vec<Vec<Square>>,
+    bingoed: bool,
 }
 
 impl Bingo {
@@ -223,7 +224,10 @@ impl Bingo {
             })
             .collect_vec();
 
-        Bingo { squares: squares }
+        Bingo {
+            squares: squares,
+            bingoed: false,
+        }
     }
 
     // Cross out the number if it exists. Return Some(num) if
@@ -238,14 +242,15 @@ impl Bingo {
             }
         }
 
-        if self.is_bingo() {
+        if !self.bingoed && self.is_bingo() {
+            self.bingoed = true;
             Some(num)
         } else {
             None
         }
     }
 
-    fn unseen_nums(&self) -> Vec<usize> {
+    fn unseen_sum(&self) -> usize {
         let mut unseen: Vec<usize> = vec![];
         for row in &self.squares {
             for square in row {
@@ -254,7 +259,7 @@ impl Bingo {
                 }
             }
         }
-        unseen
+        unseen.iter().sum()
     }
 
     fn generate_wins(&self) -> Vec<Vec<(usize, usize)>> {
@@ -294,7 +299,7 @@ impl Bingo {
     }
 }
 
-pub fn day04_a() {
+pub fn day04() {
     let mut lines = include_str!("input/day04")
         .lines()
         .map(|l| l.to_string())
@@ -321,17 +326,27 @@ pub fn day04_a() {
         buf.push(line.to_string());
     }
 
+    let mut first: Option<usize> = None;
+    let mut last: Option<usize> = None;
+
     for pick in picks {
         for mut card in &mut cards {
             if let Some(num) = card.cross_out(pick) {
-                println!(
-                    "Problem 04a bingo calc is {}",
-                    pick * card.unseen_nums().iter().sum::<usize>()
-                );
-                return;
+                if first.is_none() {
+                    first = Some(card.unseen_sum() * pick);
+                    continue;
+                }
+                let calc = card.unseen_sum() * pick;
+                if calc > 0 {
+                    last = Some(calc);
+                    println!("Last: {}", last.unwrap());
+                }
             }
         }
     }
+
+    println!("Problem 04a bingo calc is {}", first.unwrap());
+    println!("Problem 04b bingo calc is {}", last.unwrap());
 }
 
 pub fn day04_b() {
