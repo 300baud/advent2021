@@ -336,10 +336,10 @@ pub fn day04() {
                     first = Some(card.unseen_sum() * pick);
                     continue;
                 }
+
                 let calc = card.unseen_sum() * pick;
                 if calc > 0 {
                     last = Some(calc);
-                    println!("Last: {}", last.unwrap());
                 }
             }
         }
@@ -349,20 +349,92 @@ pub fn day04() {
     println!("Problem 04b bingo calc is {}", last.unwrap());
 }
 
-pub fn day04_b() {
-    println!("day04_b not solved yet!");
-}
-
 pub fn day05_a() {
-    println!("day05_a not solved yet!");
+    let lines = include_str!("input/day05")
+        .lines()
+        .map(|l| l.split_ascii_whitespace().collect_vec());
+
+    let mut grid = vec![0usize; 1_000_000];
+
+    for line in lines {
+        let start = line[0]
+            .split(",")
+            .map(|c| c.parse::<usize>().unwrap())
+            .collect_vec();
+
+        let end = line[2]
+            .split(",")
+            .map(|c| c.parse::<usize>().unwrap())
+            .collect_vec();
+
+        let (x0, y0) = (start[0], start[1]);
+        let (x1, y1) = (end[0], end[1]);
+
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                grid[((1000 * y) + x)] += 1;
+            }
+        }
+    }
+
+    println!("Problem 05a is {}", grid.iter().filter(|n| **n > 1).count());
 }
 
 pub fn day05_b() {
     println!("day05_b not solved yet!");
 }
 
+struct Lanternfish {
+    age: usize,
+}
+
+impl Lanternfish {
+    fn new() -> Self {
+        Self { age: 8 }
+    }
+
+    fn age(&self) -> usize {
+        self.age
+    }
+
+    fn with_age(age: usize) -> Self {
+        Self { age: age }
+    }
+
+    fn tick(&mut self) -> Option<Self> {
+        if self.age == 0 {
+            self.age = 6;
+            return Some(Self::new());
+        } else {
+            self.age -= 1;
+        }
+
+        None
+    }
+}
+
 pub fn day06_a() {
-    println!("day06_a not solved yet!");
+    let init_fish = include_str!("input/day06")
+        .split(",")
+        .map(|s| s.parse::<usize>().unwrap())
+        .collect_vec();
+
+    let mut fish_objs = init_fish
+        .iter()
+        .map(|n| Lanternfish::with_age(*n))
+        .collect_vec();
+
+    for day in 1..=80 {
+        let mut new_fish: Vec<Lanternfish> = vec![];
+        for mut fish in fish_objs.iter_mut() {
+            if let Some(spawn) = fish.tick() {
+                new_fish.push(spawn);
+            }
+        }
+        fish_objs.append(&mut new_fish);
+    }
+
+    println!("Problem 06a is {}", fish_objs.len());
 }
 
 pub fn day06_b() {
