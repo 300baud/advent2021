@@ -369,10 +369,16 @@ pub fn day05_a() {
 
         let (x0, y0) = (start[0], start[1]);
         let (x1, y1) = (end[0], end[1]);
+        let (x0, x1) = (x0.min(x1), x0.max(x1));
+        let (y0, y1) = (y0.min(y1), y0.max(y1));
 
         for y in y0..=y1 {
             for x in x0..=x1 {
-                grid[((1000 * y) + x)] += 1;
+                // If it's a straight line, you will share either a
+                // common x or a common y.
+                if x0 == x1 || y0 == y1 {
+                    grid[((1000 * y) + x)] += 1;
+                }
             }
         }
     }
@@ -381,7 +387,40 @@ pub fn day05_a() {
 }
 
 pub fn day05_b() {
-    println!("day05_b not solved yet!");
+    let lines = include_str!("input/day05")
+        .lines()
+        .map(|l| l.split_ascii_whitespace().collect_vec());
+
+    let mut grid = vec![0usize; 1_000_000];
+
+    for line in lines {
+        let start = line[0]
+            .split(",")
+            .map(|c| c.parse::<usize>().unwrap())
+            .collect_vec();
+
+        let end = line[2]
+            .split(",")
+            .map(|c| c.parse::<usize>().unwrap())
+            .collect_vec();
+
+        let (x0, y0) = (start[0], start[1]);
+        let (x1, y1) = (end[0], end[1]);
+        let (x0, x1) = (x0.min(x1), x0.max(x1));
+        let (y0, y1) = (y0.min(y1), y0.max(y1));
+
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                // If it's a straight line, you will share either a
+                // common x or a common y.
+                if (x0 == x1 || y0 == y1) || (y1 - y0 == x1 - x0) {
+                    grid[((1000 * y) + x)] += 1;
+                }
+            }
+        }
+    }
+
+    println!("Problem 05b is {}", grid.iter().filter(|n| **n > 1).count());
 }
 
 struct Lanternfish {
@@ -413,32 +452,48 @@ impl Lanternfish {
     }
 }
 
-pub fn day06_a() {
+pub fn day06() {
     let init_fish = include_str!("input/day06")
         .split(",")
         .map(|s| s.parse::<usize>().unwrap())
         .collect_vec();
 
-    let mut fish_objs = init_fish
-        .iter()
-        .map(|n| Lanternfish::with_age(*n))
-        .collect_vec();
+    // My old solution broke down around day 160 and 500M
+    // or so fish structs. I had to think of an easier way
+    // to represent the fish without exponential memory
+    // growth.
+    //
+    // The solution is to realize that you can just create
+    // a set of counters, one per fish lifetime. When you
+    // "age" a fish from age 5 to age 4 for example, you just
+    // decrement from the count of 5-fish and add to the count
+    // of 4-fish.
+    //
+    // So we just keep track of 9 fish lifetimes and do a
+    // bunch of adds and subtracts for every day tick.
 
-    for day in 1..=80 {
-        let mut new_fish: Vec<Lanternfish> = vec![];
-        for mut fish in fish_objs.iter_mut() {
-            if let Some(spawn) = fish.tick() {
-                new_fish.push(spawn);
-            }
-        }
-        fish_objs.append(&mut new_fish);
+    let mut fish_counts: Vec<usize> = vec![0; 9];
+    for fish in init_fish {
+        fish_counts[fish] += 1;
     }
 
-    println!("Problem 06a is {}", fish_objs.len());
-}
+    for day in 1..=256 {
+        let num_new = fish_counts[0];
+        let copy = fish_counts.clone();
+        for age in 1..=8 {
+            fish_counts[age - 1] = copy[age];
+        }
+        fish_counts[6] += num_new;
+        fish_counts[8] = num_new;
 
-pub fn day06_b() {
-    println!("day06_b not solved yet!");
+        if day == 80 {
+            println!("Problem 06a is {}", fish_counts.iter().sum::<usize>());
+        }
+
+        if day == 256 {
+            println!("Problem 06b is {}", fish_counts.iter().sum::<usize>());
+        }
+    }
 }
 
 pub fn day07_a() {
