@@ -387,8 +387,18 @@ pub fn day05_a() {
 }
 
 pub fn day05_b() {
-    let lines = include_str!("input/day05")
-        .lines()
+    let lines = //include_str!("input/day05")
+ "0,9 -> 5,9
+ 8,0 -> 0,8
+ 9,4 -> 3,4
+ 2,2 -> 2,1
+ 7,0 -> 7,4
+ 6,4 -> 2,0
+ 0,9 -> 2,9
+ 3,4 -> 1,4
+ 0,0 -> 8,8
+ 5,5 -> 8,2"       
+    .lines()
         .map(|l| l.split_ascii_whitespace().collect_vec());
 
     let mut grid = vec![0usize; 1_000_000];
@@ -396,28 +406,82 @@ pub fn day05_b() {
     for line in lines {
         let start = line[0]
             .split(",")
-            .map(|c| c.parse::<usize>().unwrap())
+            .map(|c| c.parse::<isize>().unwrap())
             .collect_vec();
 
         let end = line[2]
             .split(",")
-            .map(|c| c.parse::<usize>().unwrap())
+            .map(|c| c.parse::<isize>().unwrap())
             .collect_vec();
 
         let (x0, y0) = (start[0], start[1]);
         let (x1, y1) = (end[0], end[1]);
-        let (x0, x1) = (x0.min(x1), x0.max(x1));
-        let (y0, y1) = (y0.min(y1), y0.max(y1));
 
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                // If it's a straight line, you will share either a
-                // common x or a common y.
-                if (x0 == x1 || y0 == y1) || (y1 - y0 == x1 - x0) {
-                    grid[((1000 * y) + x)] += 1;
+        // println!("{},{} to {},{}", x0, y0, x1, y1);
+        {
+            let (fx0, fx1) = (x0.min(x1), x0.max(x1));
+            let (fy0, fy1) = (y0.min(y1), y0.max(y1));
+
+            if (x1 - x0).abs() == (y1 - y0).abs() {
+                let mut x_p = x0;
+                for x in x0..=x1 {
+                    let y_p;
+                    if y1 > y0 {
+                        y_p = y0 + x_p;
+                    } else {
+                        y_p = y0 - x_p;
+                    }
+
+                    if x1 > x0 {
+                        x_p = x0 + x_p - fx0;
+                    } else {
+                        x_p = x0 - y_p;
+                    }
+
+                    // println!("Drawing {},{}", x_p, y_p);
+
+                    let square = ((10 * y_p) + x_p) as usize;
+                    grid[square] += 1;
                 }
             }
         }
+
+        {
+            let (x0, x1) = (x0.min(x1), x0.max(x1));
+            let (y0, y1) = (y0.min(y1), y0.max(y1));
+
+            for y in y0..=y1 {
+                for x in x0..=x1 {
+                    // If it's a straight line, you will share either a
+                    // common x or a common y.
+                    // println!("Drawing {},{}", x, y);
+                    let square = ((10 * y) + x) as usize;
+                    if x0 == x1 || y0 == y1 {
+                        grid[square] += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    for y in 0..=9 {
+        for x in 0..=9 {
+            let c = match grid[(y * 10) + x] {
+                0 => '.',
+                1 => '1',
+                2 => '2',
+                3 => '3',
+                4 => '4',
+                5 => '5',
+                6 => '6',
+                7 => '7',
+                8 => '8',
+                9 => '9',
+                _ => '?',
+            };
+            // print!("{}", c);
+        }
+        // println!();
     }
 
     println!("Problem 05b is {}", grid.iter().filter(|n| **n > 1).count());
@@ -497,15 +561,73 @@ pub fn day06() {
 }
 
 pub fn day07_a() {
-    println!("day07_a not solved yet!");
+    let starting_positions = include_str!("input/day07")
+        .split(",")
+        .map(|v| v.parse::<isize>().unwrap())
+        .collect_vec();
+
+    let unique_positions = starting_positions.iter().unique().collect_vec();
+
+    let mut min_pos: (isize, usize) = (-1, usize::MAX);
+    for upos in &unique_positions {
+        let mut cost = 0usize;
+        for pos in &starting_positions {
+            cost += (*upos - pos).abs() as usize;
+        }
+        if cost < min_pos.1 {
+            min_pos = (**upos, cost);
+        }
+    }
+
+    println!("Problem 07a is {}", min_pos.1);
 }
 
 pub fn day07_b() {
-    println!("day07_b not solved yet!");
+    let starting_positions = include_str!("input/day07")
+        .split(",")
+        .map(|v| v.parse::<isize>().unwrap())
+        .collect_vec();
+
+    let unique_positions = starting_positions.iter().unique().collect_vec();
+
+    let mut min_pos: (isize, usize) = (-1, usize::MAX);
+    for upos in &unique_positions {
+        let mut cost = 0usize;
+        for pos in &starting_positions {
+            let travel = (*upos - pos).abs() as usize;
+            cost += (1..=travel).fold(0, |acc, x| acc + x);
+        }
+        if cost < min_pos.1 {
+            min_pos = (**upos, cost);
+        }
+    }
+
+    println!("Problem 07b is {}", min_pos.1);
 }
 
 pub fn day08_a() {
-    println!("day08_a not solved yet!");
+    let readings = include_str!("input/day08")
+        .lines()
+        .map(|l| {
+            l.split(" | ")
+                .map(|s| s.split_ascii_whitespace().collect_vec())
+                .collect_vec()
+        })
+        .collect_vec();
+
+    let mut easy_digit_count = 0usize;
+    for reading in &readings {
+        let (signals, digits) = (&reading[0], &reading[1]);
+        easy_digit_count += digits
+            .iter()
+            .filter(|s| match s.len() {
+                2 | 3 | 4 | 7 => true,
+                _ => false,
+            })
+            .count();
+    }
+
+    println!("Problem 08a is {}", easy_digit_count);
 }
 
 pub fn day08_b() {
