@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub fn day01_a() {
     let count = include_str!("input/day01")
@@ -628,6 +628,12 @@ pub fn day08_a() {
     }
 
     println!("Problem 08a is {}", easy_digit_count);
+
+    let mut num_lengths: HashMap<usize, usize> = HashMap::from([(1, 2), (4, 4), (7, 3), (8, 7)]);
+
+    for reading in &readings {
+        let (signals, digits) = (&reading[0], &reading[1]);
+    }
 }
 
 pub fn day08_b() {
