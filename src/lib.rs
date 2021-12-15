@@ -1,3 +1,4 @@
+use helpers::Grid2D;
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 
@@ -641,7 +642,31 @@ pub fn day08_b() {
 }
 
 pub fn day09_a() {
-    println!("day09_a not solved yet!");
+    let seafloor = include_str!("input/day09")
+        .lines()
+        .map(|l| {
+            l.split("")
+                .map(|c| Box::new(c.parse::<usize>().unwrap()))
+                .collect_vec()
+        })
+        .collect_vec();
+    let mut raw: Vec<usize> = vec![];
+    for line in &seafloor {
+        raw.extend_from_slice(line.as_slice());
+    }
+
+    let grid: Grid2D<usize> = Grid2D::new(100, 100, &raw);
+    let mut sum = 0usize;
+
+    for (i, cell) in grid.iter().enumerate() {
+        let neighbors = grid.lateral_neighbors(i % 100, i / 100);
+        let is_lows = neighbors.iter().filter(|v| v > &cell).count() == 4;
+        if is_lows {
+            sum += cell + 1;
+        }
+    }
+
+    println!("day09_a is {}", sum);
 }
 
 pub fn day09_b() {

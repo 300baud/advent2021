@@ -1,11 +1,13 @@
-pub struct Grid2D<'a, 'b, T> {
+use std::slice::{Iter, SliceIndex};
+
+pub struct Grid2D<'a, T: Copy> {
     width: usize,
     height: usize,
-    items: &'a Vec<&'b T>,
+    items: Vec<&'a Box<T>>,
 }
 
-impl<'a, 'b, T> Grid2D<'a, 'b, T> {
-    pub fn new(width: usize, height: usize, items: &'a Vec<&'b T>) -> Self {
+impl<'a, T: Copy> Grid2D<'a, T> {
+    pub fn new(width: usize, height: usize, items: Vec<&'a Box<T>>) -> Self {
         Grid2D {
             width: width,
             height: height,
@@ -18,14 +20,24 @@ impl<'a, 'b, T> Grid2D<'a, 'b, T> {
         y * self.height + x
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<&'b T> {
+    #[inline]
+    fn offset_rev(&self, offset: usize) -> (usize, usize) {
+        (offset % self.width, offset / self.height)
+    }
+
+    pub fn get(&self, x: usize, y: usize) -> Option<&Box<T>> {
         if x < self.width && y < self.height {
-            return Some(self.items[self.offset(x, y)]);
+            let item = self.items[self.offset(x, y)];
+            return Some(&item);
         }
         None
     }
 
-    fn cells_for_offsets(&self, x: usize, y: usize, offsets: Vec<(isize, isize)>) -> Vec<&'b T> {
+    pub fn iter(&self) -> Iter<&'a Box<T>> {
+        self.items.iter()
+    }
+
+    fn cells_for_offsets(&self, x: usize, y: usize, offsets: Vec<(isize, isize)>) -> Vec<&Box<T>> {
         offsets
             .iter()
             .map(|pair| (x as isize + pair.0, y as isize + pair.1))
@@ -38,21 +50,31 @@ impl<'a, 'b, T> Grid2D<'a, 'b, T> {
             .map(|p| self.get(x + p.0 as usize, y + p.1 as usize))
             .filter(|v| v.is_some())
             .map(|v| v.unwrap())
-            .collect::<Vec<&'b T>>()
+            .collect::<Vec<&Box<T>>>()
     }
 
-    pub fn lateral_neighbors(&self, x: usize, y: usize) -> Vec<&'b T> {
+    pub fn lateral_neighbors(&self, x: usize, y: usize) -> Vec<&Box<T>> {
         let offsets: Vec<(isize, isize)> = vec![(0, 1), (0, -1), (1, 0), (-1, 0)];
         self.cells_for_offsets(x, y, offsets)
     }
 
-    pub fn diagonal_neighbors(&self, x: usize, y: usize) -> Vec<&'b T> {
+    pub fn diagonal_neighbors(&self, x: usize, y: usize) -> Vec<&Box<T>> {
         let offsets: Vec<(isize, isize)> = vec![(1, 1), (1, -1), (-1, 1), (-1, -1)];
         self.cells_for_offsets(x, y, offsets)
     }
 
-    pub fn all_neighbors(&self, x: usize, y: usize) -> Vec<&'b T> {
-        [self.lateral_neighbors(x, y), self.diagonal_neighbors(x, y)].concat()
+    pub fn all_neighbors(&self, x: usize, y: usize) -> Vec<&Box<T>> {
+        let offsets: Vec<(isize, isize)> = vec![
+            (0, 1),
+            (0, -1),
+            (1, 0),
+            (-1, 0),
+            (1, 1),
+            (1, -1),
+            (-1, 1),
+            (-1, -1),
+        ];
+        self.cells_for_offsets(x, y, offsets)
     }
 }
 
