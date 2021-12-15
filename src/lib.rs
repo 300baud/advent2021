@@ -645,8 +645,8 @@ pub fn day09_a() {
     let seafloor = include_str!("input/day09")
         .lines()
         .map(|l| {
-            l.split("")
-                .map(|c| Box::new(c.parse::<usize>().unwrap()))
+            l.chars()
+                .map(|c| c.to_digit(10).unwrap() as usize)
                 .collect_vec()
         })
         .collect_vec();
@@ -655,12 +655,13 @@ pub fn day09_a() {
         raw.extend_from_slice(line.as_slice());
     }
 
-    let grid: Grid2D<usize> = Grid2D::new(100, 100, &raw);
+    let grid: Grid2D<usize> = Grid2D::new(100, 100, raw);
     let mut sum = 0usize;
 
     for (i, cell) in grid.iter().enumerate() {
         let neighbors = grid.lateral_neighbors(i % 100, i / 100);
-        let is_lows = neighbors.iter().filter(|v| v > &cell).count() == 4;
+        let neighbor_count = neighbors.len();
+        let is_lows = neighbors.iter().filter(|v| v > &&cell).count() == neighbor_count;
         if is_lows {
             sum += cell + 1;
         }
