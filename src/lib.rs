@@ -1,6 +1,9 @@
-use helpers::Grid2D;
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Index,
+};
+use toodee::{Coordinate, CopyOps, TooDee, TooDeeOps};
 
 pub fn day01_a() {
     let count = include_str!("input/day01")
@@ -328,7 +331,7 @@ pub fn day04() {
     }
 
     let mut first: Option<usize> = None;
-    let mut last: Option<usize> = None;
+    let mut prev: Option<usize> = None;
 
     for pick in picks {
         for mut card in &mut cards {
@@ -340,14 +343,14 @@ pub fn day04() {
 
                 let calc = card.unseen_sum() * pick;
                 if calc > 0 {
-                    last = Some(calc);
+                    prev = Some(calc);
                 }
             }
         }
     }
 
     println!("Problem 04a bingo calc is {}", first.unwrap());
-    println!("Problem 04b bingo calc is {}", last.unwrap());
+    println!("Problem 04b bingo calc is {}", prev.unwrap());
 }
 
 pub fn day05_a() {
@@ -641,33 +644,103 @@ pub fn day08_b() {
     println!("day08_b not solved yet!");
 }
 
-pub fn day09_a() {
-    let seafloor = include_str!("input/day09")
-        .lines()
-        .map(|l| {
-            l.chars()
-                .map(|c| c.to_digit(10).unwrap() as usize)
-                .collect_vec()
-        })
-        .collect_vec();
-    let mut raw: Vec<usize> = vec![];
-    for line in &seafloor {
-        raw.extend_from_slice(line.as_slice());
+pub trait TooDeeExtOps<T>: TooDeeOps<T> {
+    fn get_cell_and_neighbors(
+        &self,
+        coord: Coordinate,
+        include_diag: bool,
+    ) -> Option<(&T, Vec<&T>)>;
+
+    fn in_bounds(&self, coord: Coordinate) -> bool {
+        coord.1 < self.num_rows() && coord.0 < self.num_cols()
     }
 
-    let grid: Grid2D<usize> = Grid2D::new(100, 100, raw);
-    let mut sum = 0usize;
+    fn out_of_bounds(&self, coord: Coordinate) -> bool {
+        coord.1 >= self.num_rows() || coord.0 >= self.num_cols()
+    }
 
-    for (i, cell) in grid.iter().enumerate() {
-        let neighbors = grid.lateral_neighbors(i % 100, i / 100);
-        let neighbor_count = neighbors.len();
-        let is_lows = neighbors.iter().filter(|v| v > &&cell).count() == neighbor_count;
-        if is_lows {
-            sum += cell + 1;
+    fn can_add(&self, coord: Coordinate, delta: (isize, isize)) -> bool {
+        let new_coord = (
+            (coord.0 as isize + delta.0) as usize,
+            (coord.1 as isize + delta.1) as usize,
+        );
+        self.in_bounds(new_coord)
+    }
+}
+
+impl<T> TooDeeExtOps<T> for TooDee<T> {
+    fn get_cell_and_neighbors(
+        &self,
+        coord: Coordinate,
+        include_diag: bool,
+    ) -> Option<(&T, Vec<&T>)> {
+        if self.out_of_bounds(coord) {
+            return None;
+        }
+
+        let cell = self.index(coord);
+        let deltas: Vec<(isize, isize)> = if include_diag {
+            vec![
+                (0, 1),   // N
+                (1, 1),   // NE
+                (1, 0),   // E
+                (1, -1),  // SE
+                (0, -1),  // S
+                (-1, -1), // SE
+                (-1, 0),  // W
+                (-1, 1),  // NW
+            ]
+        } else {
+            vec![
+                (0, 1),  // N
+                (1, 0),  // E
+                (0, -1), // S
+                (-1, 0), // W
+            ]
+        };
+
+        let neighbors = deltas
+            .iter()
+            .filter(|delta| self.can_add(coord, **delta))
+            .map(|c| {
+                self.index((
+                    (coord.0 as isize + c.0) as usize,
+                    (coord.1 as isize + c.1) as usize,
+                ))
+            })
+            .collect_vec();
+
+        Some((cell, neighbors))
+    }
+}
+
+pub fn day09_a() {
+    let seafloor = include_str!("input/day09")
+        .chars()
+        .filter_map(|b| {
+            if b.is_ascii_alphanumeric() {
+                b.to_digit(10)
+            } else {
+                None
+            }
+        })
+        .collect_vec();
+
+    let mut grid: TooDee<u32> = TooDee::new(100, 100);
+    grid.copy_from_slice(&seafloor);
+
+    let mut count = 0usize;
+    for y in 0..100 {
+        for x in 0..100 {
+            let (cell, neighbors) = grid.get_cell_and_neighbors((x, y), false).unwrap();
+
+            if neighbors.iter().filter(|v| cell < v).count() == neighbors.len() {
+                count += *cell as usize + 1;
+            }
         }
     }
 
-    println!("day09_a is {}", sum);
+    println!("Problem 09a is {}", count);
 }
 
 pub fn day09_b() {
@@ -675,7 +748,39 @@ pub fn day09_b() {
 }
 
 pub fn day10_a() {
-    println!("day10_a not solved yet!");
+    let expressions = include_str!("input/day10").lines().collect_vec();
+    let mut score = 0;
+
+    'expr_loop: for expr in &expressions {
+        let mut stack: Vec<char> = vec![];
+
+        for curr in expr.chars() {
+            let prev: Option<char> = match curr {
+                '(' | '[' | '{' | '<' => {
+                    stack.push(curr);
+                    continue;
+                }
+                ')' | ']' | '}' | '>' => stack.pop(),
+                _ => unreachable!(),
+            };
+
+            let prev = prev.unwrap();
+
+            if curr != prev {
+                score += match curr {
+                    '(' | '[' | '{' | '<' => 0,
+                    ')' => 3,
+                    ']' => 57,
+                    '}' => 1197,
+                    '>' => 25137,
+                    _ => unreachable!(),
+                };
+                continue 'expr_loop;
+            }
+        }
+    }
+
+    println!("Problem 10a is {}", score);
 }
 
 pub fn day10_b() {

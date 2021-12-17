@@ -6,9 +6,9 @@ version = 3
 name = "advent2021"
 version = "0.1.0"
 dependencies = [
- "helpers",
  "itertools",
  "rayon",
+ "toodee",
 ]
 
 [[package]]
@@ -72,10 +72,6 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
-
-[[package]]
-name = "helpers"
-version = "0.1.0"
 
 [[package]]
 name = "hermit-abi"
@@ -156,3 +152,9 @@ name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
+
+[[package]]
+name = "toodee"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2577f53e4e6ed12ebf809f6fda006f0456b71687abdf202d7ccf28f3db880a5"
