@@ -751,31 +751,27 @@ pub fn day10_a() {
     let expressions = include_str!("input/day10").lines().collect_vec();
     let mut score = 0;
 
-    'expr_loop: for expr in &expressions {
+    for expr in &expressions {
         let mut stack: Vec<char> = vec![];
 
         for curr in expr.chars() {
-            let prev: Option<char> = match curr {
-                '(' | '[' | '{' | '<' => {
-                    stack.push(curr);
-                    continue;
+            match curr {
+                '(' => stack.push(')'),
+                '[' => stack.push(']'),
+                '{' => stack.push('}'),
+                '<' => stack.push('>'),
+                _ => {
+                    let exp = stack.pop().unwrap();
+                    if curr != exp {
+                        score += match curr {
+                            ')' => 3,
+                            ']' => 57,
+                            '}' => 1197,
+                            '>' => 25137,
+                            _ => unreachable!(),
+                        };
+                    }
                 }
-                ')' | ']' | '}' | '>' => stack.pop(),
-                _ => unreachable!(),
-            };
-
-            let prev = prev.unwrap();
-
-            if curr != prev {
-                score += match curr {
-                    '(' | '[' | '{' | '<' => 0,
-                    ')' => 3,
-                    ']' => 57,
-                    '}' => 1197,
-                    '>' => 25137,
-                    _ => unreachable!(),
-                };
-                continue 'expr_loop;
             }
         }
     }
@@ -784,7 +780,47 @@ pub fn day10_a() {
 }
 
 pub fn day10_b() {
-    println!("day10_b not solved yet!");
+    let expressions = include_str!("input/day10").lines().collect_vec();
+    let mut scores: Vec<usize> = vec![];
+
+    'mainloop: for expr in &expressions {
+        let mut stack: Vec<char> = vec![];
+
+        for curr in expr.chars() {
+            match curr {
+                '(' => stack.push(')'),
+                '[' => stack.push(']'),
+                '{' => stack.push('}'),
+                '<' => stack.push('>'),
+                _ => {
+                    let exp = stack.pop().unwrap();
+                    if curr != exp {
+                        continue 'mainloop;
+                    }
+                }
+            }
+        }
+        if stack.len() > 0 {
+            let mut score = 0;
+
+            while let Some(val) = stack.pop() {
+                score = score * 5
+                    + match val {
+                        ')' => 1,
+                        ']' => 2,
+                        '}' => 3,
+                        '>' => 4,
+                        _ => unreachable!(),
+                    };
+            }
+
+            scores.push(score);
+        }
+    }
+
+    scores.sort();
+
+    println!("Problem 10b is {}", scores[scores.len() / 2]);
 }
 
 pub fn day11_a() {
